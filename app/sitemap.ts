@@ -1,26 +1,9 @@
-// app/sitemap.ts
-import { createClient } from "@supabase/supabase-js";
+import type { MetadataRoute } from "next";
 
-export const dynamic = "force-dynamic";
-
-export default async function sitemap() {
+export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://kabu-ranking-alpha.vercel.app";
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  // 銘柄コード一覧を取得（重複排除）
-  const { data } = await supabase
-    .from("rankings")
-    .select("code")
-    .limit(1000); // 必要に応じて増やす
-
-  const codes = Array.from(new Set((data ?? []).map((v) => v.code)));
-
-  // トップページ
-  const routes = [
+  return [
     {
       url: `${baseUrl}/`,
       lastModified: new Date(),
@@ -34,12 +17,4 @@ export default async function sitemap() {
       lastModified: new Date(),
     },
   ];
-
-  // 銘柄ページ
-  const stockRoutes = codes.map((code) => ({
-    url: `${baseUrl}/stock/${code}`,
-    lastModified: new Date(),
-  }));
-
-  return [...routes, ...stockRoutes];
 }

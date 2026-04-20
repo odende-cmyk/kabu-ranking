@@ -1,11 +1,13 @@
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
+import RankingsTabs from "./RankingsTabs";
 
-type Ranking = {
+export type Ranking = {
   id: number;
   code: string;
   name: string;
+  price: number;
   change_rate: number;
+  change_value: number;
   rank_type: "up" | "down";
   market: "jp" | "us";
   created_at: string;
@@ -69,136 +71,42 @@ export default async function Home() {
           })[0]
       : undefined;
 
-  return (
-    <main className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-7xl mx-auto space-y-12">
-        <header className="space-y-3">
-          <h1 className="text-4xl font-bold">株式ランキング</h1>
-          <p className="text-zinc-400">
-            最終更新: {formatJst(latestUpdatedAt)}（日本時間）
-          </p>
-        </header>
-
-        <section>
-          <h2 className="text-3xl font-bold mb-8">日本株ランキング</h2>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-zinc-950 rounded-3xl p-6 border border-zinc-800">
-              <h3 className="text-2xl font-bold text-emerald-400 mb-6">
-                値上がり率ランキング
-              </h3>
-              <ul className="space-y-3">
-                {jpUp.map((item, index) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3"
-                  >
-                    <div>
-                      <p className="text-sm text-zinc-500">#{index + 1}</p>
-                      <Link
-                        href={`/stock/${item.code}`}
-                        className="font-medium hover:underline"
-                      >
-                        {item.code} {item.name}
-                      </Link>
-                    </div>
-                    <p className="font-semibold text-emerald-400">
-                      +{item.change_rate}%
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="bg-zinc-950 rounded-3xl p-6 border border-zinc-800">
-              <h3 className="text-2xl font-bold text-rose-400 mb-6">
-                値下がり率ランキング
-              </h3>
-              <ul className="space-y-3">
-                {jpDown.map((item, index) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3"
-                  >
-                    <div>
-                      <p className="text-sm text-zinc-500">#{index + 1}</p>
-                      <Link
-                        href={`/stock/${item.code}`}
-                        className="font-medium hover:underline"
-                      >
-                        {item.code} {item.name}
-                      </Link>
-                    </div>
-                    <p className="font-semibold text-rose-400">
-                      {item.change_rate}%
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
+      return (
+        <main className="min-h-screen bg-black text-white p-6">
+          <div className="max-w-7xl mx-auto space-y-10">
+            <header className="space-y-4">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                  株式ランキング
+                </h1>
+                <p className="text-zinc-400 mt-2">
+                  日本株・米国株の上昇率 / 下落率を一覧で確認
+                </p>
+              </div>
+      
+              <div className="inline-flex rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-300">
+                最終更新: {formatJst(latestUpdatedAt)}（日本時間）
+              </div>
+            </header>
+      
+            <RankingsTabs
+              jpUp={jpUp}
+              jpDown={jpDown}
+              usUp={usUp}
+              usDown={usDown}
+            />
           </div>
-        </section>
-
-        <section>
-          <h2 className="text-3xl font-bold mb-8">アメリカ株ランキング</h2>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-zinc-950 rounded-3xl p-6 border border-zinc-800">
-              <h3 className="text-2xl font-bold text-emerald-400 mb-6">
-                値上がり率ランキング
-              </h3>
-              <ul className="space-y-3">
-                {usUp.map((item, index) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3"
-                  >
-                    <div>
-                      <p className="text-sm text-zinc-500">#{index + 1}</p>
-                      <Link
-                        href={`/stock/${item.code}`}
-                        className="font-medium hover:underline"
-                      >
-                        {item.code} {item.name}
-                      </Link>
-                    </div>
-                    <p className="font-semibold text-emerald-400">
-                      +{item.change_rate}%
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="bg-zinc-950 rounded-3xl p-6 border border-zinc-800">
-              <h3 className="text-2xl font-bold text-rose-400 mb-6">
-                値下がり率ランキング
-              </h3>
-              <ul className="space-y-3">
-                {usDown.map((item, index) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3"
-                  >
-                    <div>
-                      <p className="text-sm text-zinc-500">#{index + 1}</p>
-                      <Link
-                        href={`/stock/${item.code}`}
-                        className="font-medium hover:underline"
-                      >
-                        {item.code} {item.name}
-                      </Link>
-                    </div>
-                    <p className="font-semibold text-rose-400">
-                      {item.change_rate}%
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
-  );
+      
+          {/* 👇 ここ追加 */}
+          <footer className="mt-16 pt-6 border-t border-zinc-800 text-sm text-zinc-400 flex gap-4 justify-center">
+            <a href="/about" className="hover:underline">
+              運営者情報
+            </a>
+            <a href="/privacy" className="hover:underline">
+              プライバシーポリシー
+            </a>
+          </footer>
+      
+        </main>
+      );
 }

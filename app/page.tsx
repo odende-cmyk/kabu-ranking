@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 type Ranking = {
   id: number;
@@ -13,6 +14,17 @@ type Ranking = {
 function formatJst(dateString?: string) {
   if (!dateString) return "未取得";
 
+  // created_at にタイムゾーン情報が無い場合は UTC として扱う
+  const normalized = /Z$|[+-]\d{2}:\d{2}$/.test(dateString)
+    ? dateString
+    : `${dateString}Z`;
+
+  const date = new Date(normalized);
+
+  if (Number.isNaN(date.getTime())) {
+    return "未取得";
+  }
+
   return new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo",
     year: "numeric",
@@ -20,7 +32,8 @@ function formatJst(dateString?: string) {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(dateString));
+    hour12: false,
+  }).format(date);
 }
 
 export default async function Home() {
@@ -48,7 +61,13 @@ export default async function Home() {
     rankings.length > 0
       ? rankings
           .map((item) => item.created_at)
-          .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+          .sort((a, b) => {
+            const aNormalized = /Z$|[+-]\d{2}:\d{2}$/.test(a) ? a : `${a}Z`;
+            const bNormalized = /Z$|[+-]\d{2}:\d{2}$/.test(b) ? b : `${b}Z`;
+            return (
+              new Date(bNormalized).getTime() - new Date(aNormalized).getTime()
+            );
+          })[0]
       : undefined;
 
   return (
@@ -77,9 +96,12 @@ export default async function Home() {
                   >
                     <div>
                       <p className="text-sm text-zinc-500">#{index + 1}</p>
-                      <p className="font-medium">
+                      <Link
+                        href={`/stock/${item.code}`}
+                        className="font-medium hover:underline"
+                      >
                         {item.code} {item.name}
-                      </p>
+                      </Link>
                     </div>
                     <p className="font-semibold text-emerald-400">
                       +{item.change_rate}%
@@ -101,9 +123,12 @@ export default async function Home() {
                   >
                     <div>
                       <p className="text-sm text-zinc-500">#{index + 1}</p>
-                      <p className="font-medium">
+                      <Link
+                        href={`/stock/${item.code}`}
+                        className="font-medium hover:underline"
+                      >
                         {item.code} {item.name}
-                      </p>
+                      </Link>
                     </div>
                     <p className="font-semibold text-rose-400">
                       {item.change_rate}%
@@ -131,9 +156,12 @@ export default async function Home() {
                   >
                     <div>
                       <p className="text-sm text-zinc-500">#{index + 1}</p>
-                      <p className="font-medium">
+                      <Link
+                        href={`/stock/${item.code}`}
+                        className="font-medium hover:underline"
+                      >
                         {item.code} {item.name}
-                      </p>
+                      </Link>
                     </div>
                     <p className="font-semibold text-emerald-400">
                       +{item.change_rate}%
@@ -155,9 +183,12 @@ export default async function Home() {
                   >
                     <div>
                       <p className="text-sm text-zinc-500">#{index + 1}</p>
-                      <p className="font-medium">
+                      <Link
+                        href={`/stock/${item.code}`}
+                        className="font-medium hover:underline"
+                      >
                         {item.code} {item.name}
-                      </p>
+                      </Link>
                     </div>
                     <p className="font-semibold text-rose-400">
                       {item.change_rate}%

@@ -9,11 +9,34 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
-  await page.goto(url, {
-    waitUntil: "domcontentloaded",
-  });
+async function safeGoto(page: any, url: string, retries = 3) {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      console.log(`アクセス開始 (${i}/${retries}): ${url}`);
 
+      await page.goto(url, {
+        waitUntil: "domcontentloaded",
+        timeout: 90000,
+      });
+
+      await page.waitForSelector("table tbody tr", { timeout: 30000 });
+
+      console.log(`アクセス成功: ${url}`);
+      return;
+    } catch (error) {
+      console.warn(`goto失敗 (${i}/${retries}): ${url}`);
+
+      if (i === retries) {
+        throw error;
+      }
+
+      await page.waitForTimeout(5000);
+    }
+  }
+}
+
+async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
+  await safeGoto(page, url);
   await page.waitForTimeout(5000);
 
   const rows = await page.locator("table tbody tr").all();
@@ -26,36 +49,82 @@ async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
       .map((v: string) => v.trim())
       .filter(Boolean);
 
-    const code = lines[0];
-    const name = lines[1];
+    console.log("取得行:", lines);
 
-    const percentLine = lines.find((v: string) => v.includes("%")) ?? "";
-    const percentMatches =
-      percentLine.match(/[+-]?\d+(?:\.\d+)?%/g) ?? [];
-    const firstPercent = percentMatches[0] ?? "0%";
+    const code = lines[0] ?? "";
+    const name = lines[1] ?? "";
 
-    let changeRate = parseFloat(
-      firstPercent.replace("%", "").replace("+", "")
+    // ログより:
+    // lines[2] = 株価
+    // lines[3] = "前日比\t騰落率\t..." のまとまり
+    const price = parseFloat(
+      (lines[2] ?? "0").replace(/,/g, "").replace("$", "")
     );
 
-    if (rankType === "down") {
-      changeRate = -Math.abs(changeRate);
+    const metrics = (lines[3] ?? "").split("\t").map((v) => v.trim());
+
+    const changeValue = parseFloat(
+      (metrics[0] ?? "0").replace(/,/g, "").replace("+", "").replace("$", "")
+    );
+
+    const changeRate = parseFloat(
+      (metrics[1] ?? "0")
+        .replace(/,/g, "")
+        .replace("%", "")
+        .replace("+", "")
+    );
+
+    if (!code || !name) {
+      console.warn("コードまたは銘柄名の取得失敗:", { lines });
+      continue;
+    }
+
+    if (Number.isNaN(price) || price <= 0) {
+      console.warn("株価の取得失敗:", { code, name, lines });
+      continue;
+    }
+
+    if (Number.isNaN(changeValue)) {
+      console.warn("前日比の取得失敗:", { code, name, lines, metrics });
+      continue;
+    }
+
+    if (Number.isNaN(changeRate)) {
+      console.warn("騰落率の取得失敗:", { code, name, lines, metrics });
+      continue;
     }
 
     const { error } = await supabase.from("rankings").insert({
       code,
       name,
-      price: 0,
+      price,
       change_rate: changeRate,
+      change_value: changeValue,
       volume: 0,
       rank_type: rankType,
       market: "us",
     });
 
     if (error) {
-      console.error("保存エラー:", error.message, code, name);
+      console.error(
+        "保存エラー:",
+        error.message,
+        code,
+        name,
+        price,
+        changeValue,
+        changeRate
+      );
     } else {
-      console.log("保存:", rankType, code, name);
+      console.log(
+        "保存:",
+        rankType,
+        code,
+        name,
+        price,
+        changeValue,
+        changeRate
+      );
     }
   }
 }

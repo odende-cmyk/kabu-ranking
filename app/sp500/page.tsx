@@ -1,6 +1,5 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { SP500_SYMBOLS } from "@/lib/sp500";
 
 type Ranking = {
   id: number;
@@ -10,13 +9,14 @@ type Ranking = {
   change_rate: number;
   change_value: number;
   market: "jp" | "us";
+  rank_type?: string;
   created_at?: string;
 };
 
 export const metadata = {
   title: "S&P500 構成銘柄の上昇率ランキング【今日】",
   description:
-    "S&P500構成銘柄の中から、今日の上昇率・下落率ランキング上位10銘柄を掲載しています。",
+    "S&P500構成銘柄の中から、今日の上昇率ランキング上位10銘柄を掲載しています。",
 };
 
 function formatPrice(price: number) {
@@ -46,18 +46,13 @@ export default async function Sp500Page() {
     (item) => item.market === "us"
   );
 
-  const sp500Stocks = usStocks.filter((item) =>
-    SP500_SYMBOLS.includes(item.code)
+  const sp500Stocks = usStocks.filter(
+    (item) => item.rank_type === "sp500"
   );
 
   const up = [...sp500Stocks]
     .filter((item) => item.change_rate > 0)
     .sort((a, b) => b.change_rate - a.change_rate)
-    .slice(0, 10);
-
-  const down = [...sp500Stocks]
-    .filter((item) => item.change_rate < 0)
-    .sort((a, b) => a.change_rate - b.change_rate)
     .slice(0, 10);
 
   return (
@@ -68,7 +63,10 @@ export default async function Sp500Page() {
             S&amp;P500 構成銘柄の上昇率ランキング【今日】
           </h1>
           <p className="text-zinc-400">
-            S&amp;P500構成銘柄の中から、今日の上昇率・下落率ランキング上位10銘柄を表示しています。
+            S&amp;P500構成銘柄の中から、今日の上昇率ランキング上位10銘柄を表示しています。
+          </p>
+          <p className="text-sm text-zinc-500">
+            対象銘柄数: {sp500Stocks.length}件
           </p>
         </header>
 
@@ -104,46 +102,6 @@ export default async function Sp500Page() {
                   </div>
 
                   <p className="text-emerald-400 font-bold text-lg shrink-0">
-                    {formatChangeRate(item.change_rate)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-bold text-rose-400 mb-4">
-            下落率 TOP10
-          </h2>
-
-          {down.length === 0 ? (
-            <p className="text-zinc-400">
-              本日は下落しているS&amp;P500構成銘柄がありません。
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {down.map((item, i) => (
-                <li
-                  key={item.id}
-                  className="flex justify-between items-center border border-zinc-800 rounded-2xl px-4 py-4 bg-zinc-950"
-                >
-                  <div className="min-w-0">
-                    <Link
-                      href={`/stock/${item.code}`}
-                      className="hover:underline"
-                    >
-                      <p className="font-semibold break-words">
-                        #{i + 1} {item.code} {item.name}
-                      </p>
-                    </Link>
-                    <div className="mt-2 text-sm text-zinc-400 space-y-1">
-                      <p>株価: {formatPrice(item.price)}</p>
-                      <p>前日比: {formatChangeValue(item.change_value)}</p>
-                    </div>
-                  </div>
-
-                  <p className="text-rose-400 font-bold text-lg shrink-0">
                     {formatChangeRate(item.change_rate)}
                   </p>
                 </li>

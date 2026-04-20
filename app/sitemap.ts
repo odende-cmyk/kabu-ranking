@@ -1,19 +1,13 @@
-import type { MetadataRoute } from "next";
+import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://kabu-ranking-alpha.vercel.app";
-
   return [
     {
-      url: `${baseUrl}/`,
+      url: "https://kabu-ranking-alpha.vercel.app/",
       lastModified: new Date(),
     },
     {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-    },
-    {
-      url: `${baseUrl}/privacy`,
+      url: "https://kabu-ranking-alpha.vercel.app/sp500",
       lastModified: new Date(),
     },
   ];

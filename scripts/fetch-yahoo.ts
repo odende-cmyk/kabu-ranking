@@ -41,13 +41,14 @@ async function fetchRanking(page: any, url: string, rankType: "up" | "down") {
     );
 
     const { error } = await supabase.from("rankings").insert({
-      code,
-      name,
-      price: 0,
-      change_rate: changeRate,
-      volume,
-      rank_type: rankType,
-    });
+        code,
+        name,
+        price: 0,
+        change_rate: changeRate,
+        volume,
+        rank_type: rankType,
+        market: "jp", // ← これを追加
+      });
 
     if (error) {
       console.error("保存エラー:", error.message, code, name);

@@ -7,55 +7,107 @@ type Ranking = {
   change_rate: number;
   rank_type: "up" | "down";
   market: "jp" | "us";
+  created_at: string;
 };
+
+function formatJst(dateString?: string) {
+  if (!dateString) return "未取得";
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(dateString));
+}
 
 export default async function Home() {
   const { data } = await supabase.from("rankings").select("*");
 
   const rankings = (data ?? []) as Ranking[];
 
-  const jpUp = rankings.filter(
-    (item) => item.market === "jp" && item.rank_type === "up"
-  );
-  const jpDown = rankings.filter(
-    (item) => item.market === "jp" && item.rank_type === "down"
-  );
+  const jpUp = rankings
+    .filter((item) => item.market === "jp" && item.rank_type === "up")
+    .sort((a, b) => b.change_rate - a.change_rate);
 
-  const usUp = rankings.filter(
-    (item) => item.market === "us" && item.rank_type === "up"
-  );
-  const usDown = rankings.filter(
-    (item) => item.market === "us" && item.rank_type === "down"
-  );
+  const jpDown = rankings
+    .filter((item) => item.market === "jp" && item.rank_type === "down")
+    .sort((a, b) => a.change_rate - b.change_rate);
+
+  const usUp = rankings
+    .filter((item) => item.market === "us" && item.rank_type === "up")
+    .sort((a, b) => b.change_rate - a.change_rate);
+
+  const usDown = rankings
+    .filter((item) => item.market === "us" && item.rank_type === "down")
+    .sort((a, b) => a.change_rate - b.change_rate);
+
+  const latestUpdatedAt =
+    rankings.length > 0
+      ? rankings
+          .map((item) => item.created_at)
+          .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+      : undefined;
 
   return (
     <main className="min-h-screen bg-black text-white p-6">
       <div className="max-w-7xl mx-auto space-y-12">
+        <header className="space-y-3">
+          <h1 className="text-4xl font-bold">株式ランキング</h1>
+          <p className="text-zinc-400">
+            最終更新: {formatJst(latestUpdatedAt)}（日本時間）
+          </p>
+        </header>
+
         <section>
-          <h1 className="text-4xl font-bold mb-8">日本株ランキング</h1>
+          <h2 className="text-3xl font-bold mb-8">日本株ランキング</h2>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-zinc-950 rounded-3xl p-6 border border-zinc-800">
-              <h2 className="text-2xl font-bold text-emerald-400 mb-6">
+              <h3 className="text-2xl font-bold text-emerald-400 mb-6">
                 値上がり率ランキング
-              </h2>
+              </h3>
               <ul className="space-y-3">
-                {jpUp.map((item) => (
-                  <li key={item.id}>
-                    {item.code} {item.name} +{item.change_rate}%
+                {jpUp.map((item, index) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-500">#{index + 1}</p>
+                      <p className="font-medium">
+                        {item.code} {item.name}
+                      </p>
+                    </div>
+                    <p className="font-semibold text-emerald-400">
+                      +{item.change_rate}%
+                    </p>
                   </li>
                 ))}
               </ul>
             </div>
 
             <div className="bg-zinc-950 rounded-3xl p-6 border border-zinc-800">
-              <h2 className="text-2xl font-bold text-rose-400 mb-6">
+              <h3 className="text-2xl font-bold text-rose-400 mb-6">
                 値下がり率ランキング
-              </h2>
+              </h3>
               <ul className="space-y-3">
-                {jpDown.map((item) => (
-                  <li key={item.id}>
-                    {item.code} {item.name} {item.change_rate}%
+                {jpDown.map((item, index) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-500">#{index + 1}</p>
+                      <p className="font-medium">
+                        {item.code} {item.name}
+                      </p>
+                    </div>
+                    <p className="font-semibold text-rose-400">
+                      {item.change_rate}%
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -64,30 +116,52 @@ export default async function Home() {
         </section>
 
         <section>
-          <h1 className="text-4xl font-bold mb-8">アメリカ株ランキング</h1>
+          <h2 className="text-3xl font-bold mb-8">アメリカ株ランキング</h2>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-zinc-950 rounded-3xl p-6 border border-zinc-800">
-              <h2 className="text-2xl font-bold text-emerald-400 mb-6">
+              <h3 className="text-2xl font-bold text-emerald-400 mb-6">
                 値上がり率ランキング
-              </h2>
+              </h3>
               <ul className="space-y-3">
-                {usUp.map((item) => (
-                  <li key={item.id}>
-                    {item.code} {item.name} +{item.change_rate}%
+                {usUp.map((item, index) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-500">#{index + 1}</p>
+                      <p className="font-medium">
+                        {item.code} {item.name}
+                      </p>
+                    </div>
+                    <p className="font-semibold text-emerald-400">
+                      +{item.change_rate}%
+                    </p>
                   </li>
                 ))}
               </ul>
             </div>
 
             <div className="bg-zinc-950 rounded-3xl p-6 border border-zinc-800">
-              <h2 className="text-2xl font-bold text-rose-400 mb-6">
+              <h3 className="text-2xl font-bold text-rose-400 mb-6">
                 値下がり率ランキング
-              </h2>
+              </h3>
               <ul className="space-y-3">
-                {usDown.map((item) => (
-                  <li key={item.id}>
-                    {item.code} {item.name} {item.change_rate}%
+                {usDown.map((item, index) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-4 border-b border-zinc-800 pb-3"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-500">#{index + 1}</p>
+                      <p className="font-medium">
+                        {item.code} {item.name}
+                      </p>
+                    </div>
+                    <p className="font-semibold text-rose-400">
+                      {item.change_rate}%
+                    </p>
                   </li>
                 ))}
               </ul>

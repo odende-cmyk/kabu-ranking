@@ -71,42 +71,52 @@ export default async function Home() {
           })[0]
       : undefined;
 
-      return (
-        <main className="min-h-screen bg-black text-white p-6">
-          <div className="max-w-7xl mx-auto space-y-10">
-            <header className="space-y-4">
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                  株式ランキング
-                </h1>
-                <p className="text-zinc-400 mt-2">
-                  日本株・米国株の上昇率 / 下落率を一覧で確認
-                </p>
-              </div>
-      
-              <div className="inline-flex rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-300">
-                最終更新: {formatJst(latestUpdatedAt)}（日本時間）
-              </div>
-            </header>
-      
-            <RankingsTabs
-              jpUp={jpUp}
-              jpDown={jpDown}
-              usUp={usUp}
-              usDown={usDown}
-            />
+  return (
+    <main className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-7xl mx-auto space-y-10">
+        <header className="space-y-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+              株式ランキング
+            </h1>
+            <p className="text-zinc-400 mt-2">
+              日本株・米国株の上昇率 / 下落率を一覧で確認
+            </p>
           </div>
-      
-          {/* 👇 ここ追加 */}
-          <footer className="mt-16 pt-6 border-t border-zinc-800 text-sm text-zinc-400 flex gap-4 justify-center">
-            <a href="/about" className="hover:underline">
-              運営者情報
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-300">
+              最終更新: {formatJst(latestUpdatedAt)}（日本時間）
+            </div>
+
+            <a
+              href="/sp500"
+              className="inline-flex items-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
+            >
+              S&amp;P500ランキングを見る
             </a>
-            <a href="/privacy" className="hover:underline">
-              プライバシーポリシー
-            </a>
-          </footer>
-      
-        </main>
-      );
+          </div>
+        </header>
+
+        <RankingsTabs
+          jpUp={jpUp}
+          jpDown={jpDown}
+          usUp={usUp}
+          usDown={usDown}
+        />
+      </div>
+
+      <footer className="mt-16 pt-6 border-t border-zinc-800 text-sm text-zinc-400 flex flex-wrap gap-4 justify-center">
+        <a href="/sp500" className="hover:underline">
+          S&amp;P500ランキング
+        </a>
+        <a href="/about" className="hover:underline">
+          運営者情報
+        </a>
+        <a href="/privacy" className="hover:underline">
+          プライバシーポリシー
+        </a>
+      </footer>
+    </main>
+  );
 }

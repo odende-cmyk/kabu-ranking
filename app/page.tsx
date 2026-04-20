@@ -14,7 +14,6 @@ type Ranking = {
 function formatJst(dateString?: string) {
   if (!dateString) return "未取得";
 
-  // created_at にタイムゾーン情報が無い場合は UTC として扱う
   const normalized = /Z$|[+-]\d{2}:\d{2}$/.test(dateString)
     ? dateString
     : `${dateString}Z`;

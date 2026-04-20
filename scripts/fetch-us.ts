@@ -61,7 +61,7 @@ async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
       (lines[2] ?? "0").replace(/,/g, "").replace("$", "")
     );
 
-    const metrics = (lines[3] ?? "").split("\t").map((v) => v.trim());
+    const metrics = (lines[3] ?? "").split("\t").map((v: string) => v.trim());
 
     const changeValue = parseFloat(
       (metrics[0] ?? "0").replace(/,/g, "").replace("+", "").replace("$", "")

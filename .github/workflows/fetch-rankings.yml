@@ -3,9 +3,7 @@ name: Fetch Stock Rankings
 on:
   workflow_dispatch:
   schedule:
-    # 平日 15:50 JST = 06:50 UTC
     - cron: "50 6 * * 1-5"
-    # 平日 16:10 JST = 07:10 UTC
     - cron: "10 7 * * 1-5"
 
 jobs:
@@ -15,6 +13,7 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
 
     steps:
       - name: Checkout
@@ -37,3 +36,6 @@ jobs:
 
       - name: Fetch US rankings
         run: npx tsx scripts/fetch-us.ts
+
+      - name: Fetch SP500 rankings
+        run: npx tsx scripts/fetch-sp500.ts

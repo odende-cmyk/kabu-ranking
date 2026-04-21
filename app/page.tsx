@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import RankingsTabs from "./RankingsTabs";
 
+export const dynamic = "force-dynamic";
+
 export type Ranking = {
   id: number;
   code: string;

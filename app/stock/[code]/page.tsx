@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ChartWidget from "./ChartWidget";
 
+export const dynamic = "force-dynamic";
+
 type Ranking = {
   id: number;
   code: string;

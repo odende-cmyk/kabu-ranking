@@ -8,9 +8,9 @@ type FinnhubConstituentsResponse = {
 };
 
 type FinnhubQuote = {
-  c: number; // current price
-  d: number; // change
-  dp: number; // percent change
+  c: number;
+  d: number;
+  dp: number;
 };
 
 const supabase = createClient(
@@ -88,9 +88,7 @@ async function main() {
     try {
       const q = await fetchQuote(symbol);
 
-      if (!q.c || q.c <= 0) {
-        continue;
-      }
+      if (!q.c || q.c <= 0) continue;
 
       rows.push({
         code: symbol,
@@ -105,7 +103,7 @@ async function main() {
 
       console.log("取得:", symbol, q.c, q.d, q.dp);
       await sleep(300);
-    } catch (e) {
+    } catch {
       console.log("skip:", symbol);
     }
   }

@@ -1,8 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
-
 type Ranking = {
   id: number;
   code: string;
@@ -10,15 +8,16 @@ type Ranking = {
   price: number;
   change_rate: number;
   change_value: number;
-  market: "jp" | "us";
-  rank_type?: string;
-  created_at?: string;
+  market: "jp" | "us" | "sp500";
+  rank_type: "up" | "down";
 };
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "S&P500 構成銘柄の上昇率ランキング【今日】",
   description:
-    "S&P500構成銘柄の中から、今日の上昇率ランキング上位10銘柄を掲載しています。",
+    "S&P500構成銘柄の中から、今日の上昇率・下落率ランキング上位10銘柄を掲載しています。",
 };
 
 function formatPrice(price: number) {
@@ -42,19 +41,21 @@ function formatChangeValue(value: number) {
 }
 
 export default async function Sp500Page() {
-  const { data } = await supabase.from("rankings").select("*");
+  const { data } = await supabase
+    .from("rankings")
+    .select("*")
+    .eq("market", "sp500");
 
-  const usStocks = ((data ?? []) as Ranking[]).filter(
-    (item) => item.market === "us"
-  );
+  const rankings = (data ?? []) as Ranking[];
 
-  const sp500Stocks = usStocks.filter(
-    (item) => item.rank_type === "sp500"
-  );
-
-  const up = [...sp500Stocks]
-    .filter((item) => item.change_rate > 0)
+  const up = [...rankings]
+    .filter((item) => item.rank_type === "up")
     .sort((a, b) => b.change_rate - a.change_rate)
+    .slice(0, 10);
+
+  const down = [...rankings]
+    .filter((item) => item.rank_type === "down")
+    .sort((a, b) => a.change_rate - b.change_rate)
     .slice(0, 10);
 
   return (
@@ -65,10 +66,7 @@ export default async function Sp500Page() {
             S&amp;P500 構成銘柄の上昇率ランキング【今日】
           </h1>
           <p className="text-zinc-400">
-            S&amp;P500構成銘柄の中から、今日の上昇率ランキング上位10銘柄を表示しています。
-          </p>
-          <p className="text-sm text-zinc-500">
-            対象銘柄数: {sp500Stocks.length}件
+            S&amp;P500構成銘柄の中から、今日の上昇率・下落率ランキング上位10銘柄を表示しています。
           </p>
         </header>
 
@@ -77,39 +75,61 @@ export default async function Sp500Page() {
             上昇率 TOP10
           </h2>
 
-          {up.length === 0 ? (
-            <p className="text-zinc-400">
-              本日は上昇しているS&amp;P500構成銘柄がありません。
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {up.map((item, i) => (
-                <li
-                  key={item.id}
-                  className="flex justify-between items-center border border-zinc-800 rounded-2xl px-4 py-4 bg-zinc-950"
-                >
-                  <div className="min-w-0">
-                    <Link
-                      href={`/stock/${item.code}`}
-                      className="hover:underline"
-                    >
-                      <p className="font-semibold break-words">
-                        #{i + 1} {item.code} {item.name}
-                      </p>
-                    </Link>
-                    <div className="mt-2 text-sm text-zinc-400 space-y-1">
-                      <p>株価: {formatPrice(item.price)}</p>
-                      <p>前日比: {formatChangeValue(item.change_value)}</p>
-                    </div>
+          <ul className="space-y-3">
+            {up.map((item, i) => (
+              <li
+                key={item.id}
+                className="flex justify-between items-center border border-zinc-800 rounded-2xl px-4 py-4 bg-zinc-950"
+              >
+                <div className="min-w-0">
+                  <Link href={`/stock/${item.code}`} className="hover:underline">
+                    <p className="font-semibold break-words">
+                      #{i + 1} {item.code} {item.name}
+                    </p>
+                  </Link>
+                  <div className="mt-2 text-sm text-zinc-400 space-y-1">
+                    <p>株価: {formatPrice(item.price)}</p>
+                    <p>前日比: {formatChangeValue(item.change_value)}</p>
                   </div>
+                </div>
 
-                  <p className="text-emerald-400 font-bold text-lg shrink-0">
-                    {formatChangeRate(item.change_rate)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
+                <p className="text-emerald-400 font-bold text-lg shrink-0">
+                  {formatChangeRate(item.change_rate)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold text-rose-400 mb-4">
+            下落率 TOP10
+          </h2>
+
+          <ul className="space-y-3">
+            {down.map((item, i) => (
+              <li
+                key={item.id}
+                className="flex justify-between items-center border border-zinc-800 rounded-2xl px-4 py-4 bg-zinc-950"
+              >
+                <div className="min-w-0">
+                  <Link href={`/stock/${item.code}`} className="hover:underline">
+                    <p className="font-semibold break-words">
+                      #{i + 1} {item.code} {item.name}
+                    </p>
+                  </Link>
+                  <div className="mt-2 text-sm text-zinc-400 space-y-1">
+                    <p>株価: {formatPrice(item.price)}</p>
+                    <p>前日比: {formatChangeValue(item.change_value)}</p>
+                  </div>
+                </div>
+
+                <p className="text-rose-400 font-bold text-lg shrink-0">
+                  {formatChangeRate(item.change_rate)}
+                </p>
+              </li>
+            ))}
+          </ul>
         </section>
       </div>
     </main>

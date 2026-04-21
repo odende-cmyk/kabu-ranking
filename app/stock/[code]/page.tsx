@@ -41,7 +41,7 @@ function formatJst(dateString?: string) {
   }).format(date);
 }
 
-function formatPrice(price?: number, market?: "jp" | "us") {
+function formatPrice(price?: number, market?: "jp" | "us"| "sp500") {
   if (price == null || Number.isNaN(price)) return "未取得";
 
   return new Intl.NumberFormat("ja-JP", {
@@ -68,7 +68,7 @@ function getYahooUrl(code: string, market: "jp" | "us") {
   return `https://finance.yahoo.com/quote/${code}`;
 }
 
-function getTradingViewSymbol(code: string, market: "jp" | "us") {
+function getTradingViewSymbol(code: string, market: "jp" | "us"| "sp500") {
   if (market === "jp") {
     return `TSE:${code}`;
   }

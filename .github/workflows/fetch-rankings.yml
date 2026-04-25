@@ -3,11 +3,20 @@ name: Fetch Stock Rankings
 on:
   workflow_dispatch:
   schedule:
-    - cron: "50 6 * * 1-5"
-    - cron: "10 7 * * 1-5"
+    # 日本株: 平日 19:05 JST = 10:05 UTC
+    - cron: "5 10 * * 1-5"
+
+    # 日本株: 回収用 平日 19:35 JST = 10:35 UTC
+    - cron: "35 10 * * 1-5"
+
+    # 米国株: 平日 7:05 JST = 22:05 UTC（前日UTC）
+    - cron: "5 22 * * 0-4"
+
+    # 米国株: 回収用 平日 7:35 JST = 22:35 UTC（前日UTC）
+    - cron: "35 22 * * 0-4"
 
 jobs:
-  fetch-rankings:
+  fetch-jp:
     runs-on: ubuntu-latest
 
     env:
@@ -32,6 +41,29 @@ jobs:
 
       - name: Fetch JP rankings
         run: npx tsx scripts/fetch-yahoo.ts
+
+  fetch-us:
+    runs-on: ubuntu-latest
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       - name: Fetch US rankings
         run: npx tsx scripts/fetch-us.ts

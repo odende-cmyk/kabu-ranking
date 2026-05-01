@@ -39,10 +39,10 @@ async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
   await safeGoto(page, url);
   await page.waitForTimeout(5000);
 
-  const rows = await page.locator("table tbody tr").all();
+  const tableRows = await page.locator("table tbody tr").all();
 
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    const text = await rows[i].innerText();
+  for (let i = 0; i < Math.min(tableRows.length, 10); i++) {
+    const text = await tableRows[i].innerText();
 
     const lines = text
       .split("\n")
@@ -54,9 +54,6 @@ async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
     const code = lines[0] ?? "";
     const name = lines[1] ?? "";
 
-    // ログより:
-    // lines[2] = 株価
-    // lines[3] = "前日比\t騰落率\t..." のまとまり
     const price = parseFloat(
       (lines[2] ?? "0").replace(/,/g, "").replace("$", "")
     );
@@ -67,12 +64,16 @@ async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
       (metrics[0] ?? "0").replace(/,/g, "").replace("+", "").replace("$", "")
     );
 
-    const changeRate = parseFloat(
+    let changeRate = parseFloat(
       (metrics[1] ?? "0")
         .replace(/,/g, "")
         .replace("%", "")
         .replace("+", "")
     );
+
+    if (rankType === "down") {
+      changeRate = -Math.abs(changeRate);
+    }
 
     if (!code || !name) {
       console.warn("コードまたは銘柄名の取得失敗:", { lines });
@@ -94,7 +95,7 @@ async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
       continue;
     }
 
-    const { error } = await supabase.from("rankings").insert({
+    const row = {
       code,
       name,
       price,
@@ -103,29 +104,51 @@ async function fetchUsRanking(page: any, url: string, rankType: "up" | "down") {
       volume: 0,
       rank_type: rankType,
       market: "us",
-    });
+    };
 
-    if (error) {
-      console.error(
-        "保存エラー:",
-        error.message,
-        code,
-        name,
-        price,
-        changeValue,
-        changeRate
-      );
-    } else {
-      console.log(
-        "保存:",
-        rankType,
-        code,
-        name,
-        price,
-        changeValue,
-        changeRate
-      );
+    const rows = [row];
+
+    const { error: rankingError } = await supabase
+      .from("rankings")
+      .upsert(rows, {
+        onConflict: "code,market",
+      });
+
+    if (rankingError) {
+      console.error("ranking insert error:", rankingError);
+      continue;
     }
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const historyRows = rows.map((row) => ({
+      code: row.code,
+      price: row.price,
+      change_rate: row.change_rate,
+      change_value: row.change_value,
+      date: today,
+    }));
+
+    const { error: historyError } = await supabase
+      .from("stock_prices")
+      .upsert(historyRows, {
+        onConflict: "code,date",
+      });
+
+    if (historyError) {
+      console.error("history insert error:", historyError);
+      continue;
+    }
+
+    console.log(
+      "保存:",
+      rankType,
+      code,
+      name,
+      price,
+      changeValue,
+      changeRate
+    );
   }
 }
 

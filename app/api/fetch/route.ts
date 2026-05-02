@@ -1,36 +1,82 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
+import { createClient } from "@supabase/supabase-js";
 
-export async function GET(): Promise<Response> {
-  const result = await new Promise<{
-    ok: boolean;
-    output: string;
-  }>((resolve) => {
-    exec("npx tsx scripts/fetch-yahoo.ts && npx tsx scripts/fetch-us.ts", (error, stdout, stderr) => {
-      if (error) {
-        resolve({
-          ok: false,
-          output: stderr || error.message,
-        });
-        return;
-      }
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-      resolve({
-        ok: true,
-        output: stdout,
-      });
-    });
-  });
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
 
-  if (!result.ok) {
-    return NextResponse.json(
-      { status: "error", error: result.output },
-      { status: 500 }
-    );
+  const market = searchParams.get("market") ?? "jp";
+  const period = searchParams.get("period") ?? "today";
+
+  const { data: rankings, error } = await supabase
+    .from("rankings")
+    .select("*")
+    .eq("market", market);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  if (period === "today") {
+    return NextResponse.json({
+      up: rankings.filter((r) => r.rank_type === "up"),
+      down: rankings.filter((r) => r.rank_type === "down"),
+    });
+  }
+
+  const target = new Date();
+  target.setDate(target.getDate() - 7);
+  const targetDate = target.toISOString().slice(0, 10);
+
+  const codes = rankings.map((r) => r.code);
+
+  const { data: histories, error: historyError } = await supabase
+    .from("stock_prices")
+    .select("*")
+    .eq("market", market)
+    .in("code", codes)
+    .lte("date", targetDate)
+    .order("date", { ascending: false });
+
+  if (historyError) {
+    return NextResponse.json({ error: historyError.message }, { status: 500 });
+  }
+
+  const pastMap = new Map<string, number>();
+
+  for (const h of histories ?? []) {
+    if (!pastMap.has(h.code)) {
+      pastMap.set(h.code, Number(h.price));
+    }
+  }
+
+  const weekly = rankings
+    .map((r) => {
+      const pastPrice = pastMap.get(r.code);
+
+      if (!pastPrice || pastPrice <= 0) return null;
+
+      const week_change_rate =
+        ((Number(r.price) - pastPrice) / pastPrice) * 100;
+
+      return {
+        ...r,
+        past_price: pastPrice,
+        week_change_rate,
+      };
+    })
+    .filter(Boolean) as any[];
+
   return NextResponse.json({
-    status: "ok",
-    result: result.output,
+    up: weekly
+      .sort((a, b) => b.week_change_rate - a.week_change_rate)
+      .slice(0, 10),
+    down: weekly
+      .sort((a, b) => a.week_change_rate - b.week_change_rate)
+      .slice(0, 10),
   });
 }

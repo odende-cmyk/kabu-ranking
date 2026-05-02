@@ -109,7 +109,7 @@ async function fetchRanking(page: any, url: string, rankType: "up" | "down") {
     const { error: rankingError } = await supabase
       .from("rankings")
       .upsert(rows, {
-        onConflict: "code,market",
+        onConflict: "code,market,date",
       });
 
     if (rankingError) {
@@ -121,6 +121,7 @@ async function fetchRanking(page: any, url: string, rankType: "up" | "down") {
 
     const historyRows = rows.map((row) => ({
       code: row.code,
+      market: "jp",
       price: row.price,
       change_rate: row.change_rate,
       change_value: row.change_value,
@@ -130,7 +131,7 @@ async function fetchRanking(page: any, url: string, rankType: "up" | "down") {
     const { error: historyError } = await supabase
       .from("stock_prices")
       .upsert(historyRows, {
-        onConflict: "code,date",
+        onConflict: "code,market,date",
       });
 
     if (historyError) {

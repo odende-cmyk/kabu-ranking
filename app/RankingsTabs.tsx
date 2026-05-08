@@ -30,6 +30,12 @@ function formatChangeValue(value?: number, market?: "jp" | "us") {
   return `${value >= 0 ? "+" : ""}${formatted}${market === "jp" ? "円" : " USD"}`;
 }
 
+function getDisplayRate(item: RankingWithWeek, period: Period) {
+  return period === "week" && item.week_change_rate != null
+    ? item.week_change_rate
+    : item.change_rate;
+}
+
 function RankingCard({
   title,
   titleColor,
@@ -47,19 +53,16 @@ function RankingCard({
 
       {items.length === 0 ? (
         <p className="text-sm text-zinc-500">
-          データがまだありません。過去1週間ランキングは履歴が貯まると表示されます。
+          データがまだありません。履歴が貯まると表示されます。
         </p>
       ) : (
         <ul className="space-y-3">
           {items.map((item, index) => {
-            const displayRate =
-              period === "week" && item.week_change_rate != null
-                ? item.week_change_rate
-                : item.change_rate;
+            const displayRate = getDisplayRate(item, period);
 
             return (
               <li
-                key={`${item.market}-${item.code}`}
+                key={`${item.market}-${item.code}-${index}`}
                 className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-4"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -129,6 +132,8 @@ export default function RankingsTabs({
   });
 
   useEffect(() => {
+    if (period === "today") return;
+
     fetch(`/api/rankings?market=${activeTab}&period=${period}`)
       .then((res) => res.json())
       .then((json) => {
@@ -146,24 +151,12 @@ export default function RankingsTabs({
   const current = useMemo(() => {
     if (period === "today") {
       if (activeTab === "jp") {
-        const weekUp = [...apiData.up, ...apiData.down]
-  .filter((item) => item.week_change_rate != null)
-  .filter((item) => item.week_change_rate! > 0)
-  .sort((a, b) => b.week_change_rate! - a.week_change_rate!)
-  .slice(0, 10);
-
-const weekDown = [...apiData.up, ...apiData.down]
-  .filter((item) => item.week_change_rate != null)
-  .filter((item) => item.week_change_rate! < 0)
-  .sort((a, b) => a.week_change_rate! - b.week_change_rate!)
-  .slice(0, 10);
-
-return {
-  title: activeTab === "jp" ? "日本株ランキング" : "アメリカ株ランキング",
-  description: "過去1週間の上昇率・下落率を表示",
-  up: weekUp,
-  down: weekDown,
-};
+        return {
+          title: "日本株ランキング",
+          description: "株価・前日比・騰落率をまとめて表示",
+          up: jpUp,
+          down: jpDown,
+        };
       }
 
       return {
@@ -174,11 +167,25 @@ return {
       };
     }
 
+    const allWeekItems = [...apiData.up, ...apiData.down];
+
+    const weekUp = allWeekItems
+      .filter((item) => item.week_change_rate != null)
+      .filter((item) => item.week_change_rate! > 0)
+      .sort((a, b) => b.week_change_rate! - a.week_change_rate!)
+      .slice(0, 10);
+
+    const weekDown = allWeekItems
+      .filter((item) => item.week_change_rate != null)
+      .filter((item) => item.week_change_rate! < 0)
+      .sort((a, b) => a.week_change_rate! - b.week_change_rate!)
+      .slice(0, 10);
+
     return {
       title: activeTab === "jp" ? "日本株ランキング" : "アメリカ株ランキング",
       description: "過去1週間の上昇率・下落率を表示",
-      up: apiData.up,
-      down: apiData.down,
+      up: weekUp,
+      down: weekDown,
     };
   }, [activeTab, period, jpUp, jpDown, usUp, usDown, apiData]);
 

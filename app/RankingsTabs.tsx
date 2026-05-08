@@ -146,12 +146,24 @@ export default function RankingsTabs({
   const current = useMemo(() => {
     if (period === "today") {
       if (activeTab === "jp") {
-        return {
-          title: "日本株ランキング",
-          description: "株価・前日比・騰落率をまとめて表示",
-          up: jpUp,
-          down: jpDown,
-        };
+        const weekUp = [...apiData.up, ...apiData.down]
+  .filter((item) => item.week_change_rate != null)
+  .filter((item) => item.week_change_rate! > 0)
+  .sort((a, b) => b.week_change_rate! - a.week_change_rate!)
+  .slice(0, 10);
+
+const weekDown = [...apiData.up, ...apiData.down]
+  .filter((item) => item.week_change_rate != null)
+  .filter((item) => item.week_change_rate! < 0)
+  .sort((a, b) => a.week_change_rate! - b.week_change_rate!)
+  .slice(0, 10);
+
+return {
+  title: activeTab === "jp" ? "日本株ランキング" : "アメリカ株ランキング",
+  description: "過去1週間の上昇率・下落率を表示",
+  up: weekUp,
+  down: weekDown,
+};
       }
 
       return {
